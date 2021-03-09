@@ -1,1 +1,60 @@
-in pb-prepare-server.yml var {{ src-network }} must be sent by --extra-var
+#### Подготовка сервера #####
+
+- Подготовка сервера: pb-prepare-server.yml
+установка python3
+добавление записей хостой в файл /etc/hosts
+установка firewalld и конфигурация для работы сервисов rabbitmq
+отключение SELinux
+
+
+#####  RABBITMQ  #####
+
+- Установка: pb-rabbitmq-install.yml
+- Удаление:  pb-rabbitmq-remove.yml
+
+ Чтобы отпработал плейбук pb-rabbitmq-install.yml, должна быть удалена папка /var/lib/rabbitmq/mnesia/ на хостах.
+Иначе сообщение от mnesia: 2020-07-27 21:11:21.362 [info] <0.269.0> Waiting for Mnesia tables for 30000 ms, 0 retries left
+и сервер не запустится.
+ Папка "/var/lib/rabbitmq/mnesia/" удаляется плейбуком pb-rabbitmq-remove.yml.
+ Так же удаляется "/var/lib/rabbitmq/.erlang.cookie" и "/etc/rabbitmq/rabbitmq.conf"
+
+
+
+#####  REDIS  #####
+
+- Установка: pb-redis-install.yml
+- Удаление:  pb-redis-remove.yml
+
+При удалении, плейбуком так же удаляются конфиг файлы /etc/redis.conf и /etc/redis-sentinel.conf
+
+
+#####  MARIADB  #####
+
+- Установка: pb-mariadb-install.yml
+- Удаление:  pb-mariadb-remove.yml
+
+После полного выключения всех нод, нужно перезапускать кластер:
+  - На мастер ноде:
+        1. В файле /var/lib/mysql/grastate.dat, в параметр safe_to_bootstrap: устанавливаем 1.
+        2. Создаем кластер командой galera_new_cluster
+  - На остальных нодах запускаем как обычно. systemctl start mariadb
+
+#### GIT #####
+
+- Сбор конфигов: pb-fetch-configs.yml
+складывает в папку проекта ../git/configs/travel
+
+##### ROLES ######
+
+- Установка: pb-deploy-roles
+
+* Роли:
+  - role: prepare-hosts            #Подготовка сервера. добавление записей в/etc/hosts, настройка firewalld и выключение SELinux
+  - role: deploy-mariadb-cluster   #Установка MariaDB и настройка кластера galera
+  - role: deploy-rabbitmq-cluster  #Установка RAbbitMQ с джойном к мастер ноде.
+  - role: deploy-redis-sentinel    #Устновка Redis с репликацией с мастер нодой и настройка sentinel
+
+- Удаление:
+  pb-rabbitmq-remove.yml  #Удаляет RabbitMQ и конфиг файлы /etc/rabbitmq.conf, erlang.cookie и папку /var/lib/rabbitmq/mnesia/
+  pb-redis-remove.yml     #Удаляет Redis и конфиг файлы /etc/redis.conf и /etc/redis-sentinel.conf
+  pb-mariadb-remove.yml   #Удаляет MariaDB и файл /var/lib/mysql/grastate.dat и папку /etc/my.cnf.d
