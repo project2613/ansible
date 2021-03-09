@@ -1,4 +1,4 @@
 ---
 # vars file for prepare-hosts
-src_network: 10.129.0.0/24
+src_network: 0.0.0.0/24
 fw_work_zone: test1
