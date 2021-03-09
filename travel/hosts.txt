@@ -1,0 +1,9 @@
+[master]
+node1	server_id=1
+
+[replicas]
+node2	server_id=2
+node3	server_id=3
+
+
+

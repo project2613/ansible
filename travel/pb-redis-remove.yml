@@ -1,0 +1,22 @@
+---
+- name: remove redis and config files from all hosts
+  hosts: all
+  become: yes
+  tasks:
+
+
+  - name: remove redis  packages
+    dnf:
+      name: redis
+      state: absent
+
+  - name: Remove redis config file
+    file:
+      path: /etc/redis.conf
+      state: absent
+
+  - name: remove sentinel config file
+    file:
+      path: /etc/redis-sentinel.conf
+      state: absent
+

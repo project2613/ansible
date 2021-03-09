@@ -1,0 +1,74 @@
+--- 
+- name: Install Configure and Run Redis with Sentinel 
+  hosts: all 
+  become: yes
+  
+  vars:
+    master_host: node1
+
+  tasks:
+  
+  - name: install redis 
+    dnf: 
+      name: redis 
+      state: latest
+      
+  - name: start and enable redis service 
+    service: 
+      name: redis 
+      state: started 
+      enabled: yes
+     
+  - name: Insert configuration bind section 
+    lineinfile: 
+      path: /etc/redis.conf 
+      regexp: 'bind 127.0.0.1' 
+      line: 'bind 0.0.0.0'
+             
+  - name: Insert configuration appendonly section 
+    lineinfile: 
+      path: /etc/redis.conf 
+      regexp: 'appendonly no' 
+      line: 'appendonly yes'
+             
+  - name: Insert configuration replicaof section on non-master nodes
+    lineinfile: 
+      path: /etc/redis.conf 
+      insertafter: '# replicaof <masterip> <masterport>' 
+      line: 'replicaof node1 6379' 
+      state: present
+    when: ansible_hostname != master_host
+  
+  - name: restart redis after configure 
+    service: 
+      name: redis 
+      state: restarted
+  
+  - name: Insert configuration monitor mymaster section
+    lineinfile: 
+      path: /etc/redis-sentinel.conf 
+      regexp: '^sentinel monitor mymaster' 
+      line: 'sentinel monitor mymaster {{ master_host }} 6379 2'
+          
+  - name: Insert configuration down-after-milliseconds section 
+    lineinfile: 
+      path: /etc/redis-sentinel.conf 
+      regexp: '^sentinel down-after-milliseconds mymaster' 
+      line: 'sentinel down-after-milliseconds mymaster 5000'
+
+  - name: Insert configuration failover-timeout section 
+    lineinfile: 
+      path: /etc/redis-sentinel.conf 
+      regexp: '^sentinel failover-timeout mymaster' 
+      line: 'sentinel failover-timeout mymaster 60000'
+
+  - name: Insert configuration parallel-syncs section 
+    lineinfile: 
+      path: /etc/redis-sentinel.conf 
+      regexp: '^sentinel parallel-syncs mymaster' 
+      line: 'sentinel parallel-syncs mymaster 1'
+ 
+  - name: restart redis-sentinel after change configuration 
+    service: 
+      name: redis-sentinel
+      state: restarted          

@@ -1,0 +1,14 @@
+---
+- name: testing create conf from template
+  hosts: all
+  become: yes
+  
+  vars:
+    rabbits: "{{ groups['all'] }}"
+
+  tasks:
+  
+  - name: copy some conf from template 
+    template: 
+      src: ./cfg/some-cfg.j2
+      dest: /home/travel/some-cfg.conf

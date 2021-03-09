@@ -1,0 +1,11 @@
+---
+- name: Install Roles
+  hosts: all
+  become: yes
+  
+  roles:
+    - role: prepare-hosts
+    - role: deploy-mariadb-cluster
+    - role: deploy-rabbitmq-cluster
+    - role: deploy-redis-sentinel
+      when: ansible_os_family == "RedHat"

@@ -1,0 +1,37 @@
+--- 
+- name: Install and configure MariaDB-Server on nodes 
+  hosts: all 
+  become: yes
+  
+  vars:
+    master_host: node1
+
+  tasks: 
+  
+  - name: copy mariadb.repo file to nodes 
+    copy: 
+      src: ./repos/mariadb.repo 
+      dest: /etc/yum.repos.d/ 
+      mode: 0644 
+ 
+  - name: install mariadb-server and mariadb-client
+    yum: 
+      name: MariaDB-server, MariaDB-client 
+      state: latest
+      
+  - name: copy MariaDB config file to nodes 
+    template: 
+      src: ./cfg/z-custom-my.j2 
+      dest: /etc/my.cnf.d/z-custom-my.cnf
+       
+  - name: start galera_new_cluster on master host 
+    shell: galera_new_cluster 
+    when: ansible_hostname == master_host
+    
+  - name: start and enable mariadb service 
+    service: 
+      name: mariadb 
+      state: started 
+      enabled: yes
+      
+      

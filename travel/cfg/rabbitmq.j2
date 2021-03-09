@@ -1,0 +1,15 @@
+# -- my config --
+
+#CLUSTER
+cluster_name = {{ cluster_name }}
+cluster_partition_handling = ignore
+cluster_partition_handling.pause_if_all_down.recover = autoheal
+cluster_formation.node_type = disc
+{% for host in rabbits %}
+cluster_formation.classic_config.nodes.{{ loop.index }} = rabbit@{{ host }}
+{% endfor %}
+
+#MEMORY
+vm_memory_high_watermark.relative = 0.2
+vm_memory_calculation_strategy = rss
+channel_max = 4

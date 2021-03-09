@@ -1,0 +1,34 @@
+---
+- name: fetch configs from nodes
+  hosts: all
+  become: yes
+  
+  vars:
+    cfg_dst: /home/travel/git/configs/travel
+
+  tasks:
+  
+  - name: fetch rabbitmq config
+    fetch:
+      src: /etc/rabbitmq/rabbitmq.conf
+      dest: "{{cfg_dst}}/rabbitmq/{{ansible_hostname}}/"
+      flat: yes
+
+  - name: fetch redis config
+    fetch: 
+      src: /etc/redis.conf
+      dest: "{{cfg_dst}}/redis/{{ansible_hostname}}/"
+      flat: yes
+   
+  - name: fetch sentinel config
+    fetch:
+      src: /etc/redis-sentinel.conf
+      dest: "{{cfg_dst}}/redis/{{ansible_hostname}}/"
+      flat: yes
+
+  - name: fetch mariadb config
+    fetch:
+      src: /etc/my.cnf.d/z-custom-my.cnf
+      dest: "{{cfg_dst}}/mariadb/{{ansible_hostname}}/"
+      flat: yes
+

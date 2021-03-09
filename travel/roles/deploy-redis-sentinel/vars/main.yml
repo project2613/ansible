@@ -1,0 +1,3 @@
+---
+# vars file for deploy-redis-sentinel
+master_host: node1

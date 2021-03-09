@@ -1,0 +1,73 @@
+---
+# tasks file for deploy-rabbitmq-cluster
+- name: copy erlang repo file
+  copy:
+    src: rabbitmq-erlang.repo
+    dest: /etc/yum.repos.d/
+    mode: 0644
+
+- name: copy rabbitmq repo file
+  copy:
+    src: rabbitmq-server.repo
+    dest: /etc/yum.repos.d/
+    mode: 0644
+
+- name: install erlang and rabbitmq-server
+  dnf:
+    name: erlang, rabbitmq-server
+    state: latest
+
+- name: copy rabbitmq CONFIG file
+  template:
+    src: rabbitmq.j2
+    dest: /etc/rabbitmq/rabbitmq.conf
+    mode: 0644
+    owner: rabbitmq
+
+- name: run and enable service rabbitmq
+  service:
+    name: rabbitmq-server
+    state: started
+    enabled: yes
+
+- name: copy .erlang.cookie from master
+  shell: sudo cat /var/lib/rabbitmq/.erlang.cookie
+  register: rabbit_cookie
+  when: ansible_hostname == master_host
+
+- debug:
+    var: rabbit_cookie.stdout
+
+- name: "save my cookie from master to dummy host"
+  add_host:
+    name: "my_cookie_holder"
+    my_cookie: "{{ rabbit_cookie.stdout }}"
+
+- block:
+    - name: copy cookie from master to non-master nodes
+      shell: echo "{{item}}" > /var/lib/rabbitmq/.erlang.cookie
+      with_items:
+        - "{{hostvars['my_cookie_holder']['my_cookie']}}"
+
+    - name: set permissions and owner on cookie file
+      shell: chmod 0400 /var/lib/rabbitmq/.erlang.cookie ; chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+
+    - name: restart rabbitmq-server after creating new cookie file
+      service:
+        name: rabbitmq-server
+        state: restarted
+
+    - name: stop_app on non-master nodes
+      shell: rabbitmqctl stop_app
+
+    - name: reset bofore join cluster
+      shell: rabbitmqctl reset
+
+    - name: join to cluster non-master nodes
+      shell: rabbitmqctl join_cluster --disc rabbit@node1
+
+    - name: start_app after join to cluster
+      shell: rabbitmqctl start_app
+
+  when: ansible_hostname != master_host
+

@@ -1,0 +1,8 @@
+---
+- name: Test connection to nodes
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Ping my nodes
+    ping:

@@ -1,0 +1,10 @@
+---
+
+- name: restart all rabbitmq-server
+  hosts: all
+  become: yes
+  tasks:
+  - name: restart
+    service:
+      name: rabbitmq-server
+      state: restarted

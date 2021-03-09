@@ -1,0 +1,27 @@
+---
+- name: remove rabbitmq and mnesia folder from all hosts
+  hosts: all
+  become: yes
+  tasks:
+  
+
+  - name: remove rabbitmq and erlang packages
+    dnf:
+      name: rabbitmq-server, erlang
+      state: absent
+
+  - name: Remove config file 
+    file:
+      path: /etc/rabbitmq/rabbitmq.conf
+      state: absent
+
+  - name: Remove cookie file
+    file:
+      path: /var/lib/rabbitmq/.erlang.cookie
+      state: absent
+
+  - name: mnesia folder
+    file:
+      path: /var/lib/rabbitmq/mnesia/
+      state: absent
+

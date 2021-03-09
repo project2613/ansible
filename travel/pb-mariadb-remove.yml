@@ -1,0 +1,21 @@
+---
+- name: remove MariaDB-server and MariaDB-client from all hosts
+  hosts: all
+  become: yes
+  tasks:
+  
+
+  - name: remove MariaDB-server and MariaDB-client packages
+    dnf:
+      name: MariaDB-server, MariaDB-client
+      state: absent
+
+  - name: Remove config file 
+    file:
+      path: /etc/my.cnf.d/
+      state: absent
+  
+  - name: remove /var/lib/mysql/grastate.dat
+    file:
+      path: /var/lib/mysql/grastate.dat
+      state: absent

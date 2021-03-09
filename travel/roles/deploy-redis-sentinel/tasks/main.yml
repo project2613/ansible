@@ -1,0 +1,72 @@
+---
+# tasks file for deploy-redis-sentinel
+- name: install redis 
+  dnf: 
+    name: redis 
+    state: latest
+      
+- name: start and enable redis service 
+  service: 
+    name: redis 
+    state: started 
+    enabled: yes
+     
+- name: REDIS insert configuration bind
+  lineinfile: 
+    path: /etc/redis.conf 
+    regexp: 'bind 127.0.0.1' 
+    line: 'bind 0.0.0.0'
+    state: present
+             
+- name: REDIS insert configuration appendonly 
+  lineinfile: 
+    path: /etc/redis.conf 
+    regexp: 'appendonly no' 
+    line: 'appendonly yes'
+    state: present
+             
+- name: REDIS insert configuration replicaof section on non-master nodes 
+  lineinfile: 
+    path: /etc/redis.conf 
+    insertafter: '#replicaof <masterip> <masterport>' 
+    line: 'replicaof {{ master_host }} 6379' 
+    state: present
+  when: ansible_hostname != master_host
+  
+- name: restart redis after configure 
+  service: 
+    name: redis 
+    state: restarted
+
+- name: SENTINEL insert configuration monitor mymaster 
+  lineinfile: 
+    path: /etc/redis-sentinel.conf 
+    regexp: '^sentinel monitor mymaster' 
+    line: 'sentinel monitor mymaster {{ master_host }} 6379 2'
+    state: present          
+
+- name: SENTINEL insert configuration down-after-milliseconds 
+  lineinfile: 
+    path: /etc/redis-sentinel.conf 
+    regexp: '^sentinel down-after-milliseconds mymaster' 
+    line: 'sentinel down-after-milliseconds mymaster 5000'
+    state: present
+
+- name: SENTINEL insert configuration failover-timeout  
+  lineinfile: 
+    path: /etc/redis-sentinel.conf 
+    regexp: '^sentinel failover-timeout mymaster' 
+    line: 'sentinel failover-timeout mymaster 60000'
+    state: present
+
+- name: SENTINEL insert configuration parallel-syncs
+  lineinfile: 
+    path: /etc/redis-sentinel.conf 
+    regexp: '^sentinel parallel-syncs mymaster' 
+    line: 'sentinel parallel-syncs mymaster 1'
+    state: present 
+
+- name: restart redis-sentinel after change configuration 
+  service: 
+    name: redis-sentinel
+    state: restarted          

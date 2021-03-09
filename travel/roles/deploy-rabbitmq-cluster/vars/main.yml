@@ -1,0 +1,5 @@
+---
+# vars file for deploy-rabbitmq-cluster
+master_host: node1
+cluster_name: travel
+rabbits: "{{ groups['all'] }}"

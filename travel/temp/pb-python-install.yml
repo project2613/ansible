@@ -1,0 +1,11 @@
+---
+- name: install python on all nodes
+  hosts: all
+  become: yes
+  
+  tasks:
+    
+  - name: instal python3 package
+    dnf:
+      name: python3
+      state: latest
